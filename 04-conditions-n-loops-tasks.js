@@ -45,7 +45,8 @@ function getFizzBuzz(num) {
  *   10 => 3628800
  */
 function getFactorial(n) {
-  return n <= 1 ? 1 : n * getFactorial(n - 1);
+  if (n === 0 || n === 1) return 1;
+  return n * getFactorial(n - 1);
 }
 
 /**
@@ -61,8 +62,11 @@ function getFactorial(n) {
  *   -1,1  =>  0  ( = -1 + 0 + 1 )
  */
 function getSumBetweenNumbers(n1, n2) {
-  const count = n2 - n1 + 1;
-  return ((n1 + n2) * count) / 2;
+  let sum = 0;
+  for (let i = n1; i <= n2; i += 1) {
+    sum += i;
+  }
+  return sum;
 }
 
 /**
@@ -154,8 +158,7 @@ function doRectanglesOverlap(rect1, rect2) {
 function isInsideCircle(circle, point) {
   const dx = point.x - circle.center.x;
   const dy = point.y - circle.center.y;
-  const distanceSquared = dx * dx + dy * dy;
-  return distanceSquared < circle.radius * circle.radius;
+  return dx * dx + dy * dy < circle.radius * circle.radius;
 }
 
 /**
@@ -170,8 +173,7 @@ function isInsideCircle(circle, point) {
  *   'entente' => null
  */
 function findFirstSingleChar(str) {
-  for (let i = 0; i < str.length; i += 1) {
-    const char = str[i];
+  for (const char of str) {
     if (str.indexOf(char) === str.lastIndexOf(char)) {
       return char;
     }
@@ -202,11 +204,10 @@ function findFirstSingleChar(str) {
  *
  */
 function getIntervalString(a, b, isStartIncluded, isEndIncluded) {
-  const start = Math.min(a, b);
-  const end = Math.max(a, b);
-  const leftBracket = isStartIncluded ? '[' : '(';
-  const rightBracket = isEndIncluded ? ']' : ')';
-  return `${leftBracket}${start}, ${end}${rightBracket}`;
+  const start = isStartIncluded ? '[' : '(';
+  const end = isEndIncluded ? ']' : ')';
+  const [min, max] = a < b ? [a, b] : [b, a];
+  return `${start}${min}, ${max}${end}`;
 }
 
 /**
@@ -263,15 +264,14 @@ function reverseInteger(num) {
  */
 function isCreditCardNumber(ccn) {
   const digits = ccn.toString().split('').reverse().map(Number);
-
-  const sum = digits.reduce((acc, digit, index) => {
-    if (index % 2 === 1) {
-      const doubled = digit * 2;
-      return acc + (doubled > 9 ? doubled - 9 : doubled);
+  const sum = digits.reduce((acc, digit, idx) => {
+    if (idx % 2 === 1) {
+      let doubled = digit * 2;
+      if (doubled > 9) doubled -= 9;
+      return acc + doubled;
     }
     return acc + digit;
   }, 0);
-
   return sum % 10 === 0;
 }
 
@@ -290,15 +290,13 @@ function isCreditCardNumber(ccn) {
  *   165536 (1+6+5+5+3+6 = 26,  2+6 = 8) => 8
  */
 function getDigitalRoot(num) {
-  let current = num;
-  while (current > 9) {
-    current = current
+  while (num > 9) {
+    num = num
       .toString()
       .split('')
-      .map(Number)
-      .reduce((sum, digit) => sum + digit, 0);
+      .reduce((sum, digit) => sum + Number(digit), 0);
   }
-  return current;
+  return num;
 }
 
 /**
@@ -324,22 +322,15 @@ function getDigitalRoot(num) {
  */
 function isBracketsBalanced(str) {
   const stack = [];
-  const open = ['[', '(', '{', '<'];
-  const close = [']', ')', '}', '>'];
-
-  return (
-    str.split('').every((char) => {
-      if (open.includes(char)) {
-        stack.push(char);
-      } else if (close.includes(char)) {
-        const expected = open[close.indexOf(char)];
-        if (stack.pop() !== expected) {
-          return false;
-        }
-      }
-      return true;
-    }) && stack.length === 0
-  );
+  const pairs = { ']': '[', ')': '(', '}': '{', '>': '<' };
+  for (const char of str) {
+    if (Object.values(pairs).includes(char)) {
+      stack.push(char);
+    } else if (Object.keys(pairs).includes(char)) {
+      if (stack.pop() !== pairs[char]) return false;
+    }
+  }
+  return stack.length === 0;
 }
 
 /**
@@ -366,25 +357,30 @@ function toNaryString(num, n) {
   return num.toString(n);
 }
 
+/**
+ * Returns the common directory path for specified array of full filenames.
+ *
+ * @param {array} pathes
+ * @return {string}
+ *
+ * @example:
+ *   ['/web/images/image1.png', '/web/images/image2.png']  => '/web/images/'
+ *   ['/web/assets/style.css', '/web/scripts/app.js',  'home/setting.conf'] => ''
+ *   ['/web/assets/style.css', '/.bin/mocha',  '/read.me'] => '/'
+ *   ['/web/favicon.ico', '/web-scripts/dump', '/verbalizer/logs'] => '/'
+ */
 function getCommonDirectoryPath(pathes) {
-  const splitPaths = pathes.map((path) => path.split('/'));
+  const splitPaths = pathes.map((p) => p.split('/'));
+  const result = [];
 
-  const commonParts = [];
-
-  for (let i = 0; ; i += 1) {
+  for (let i = 0; ; i++) {
     const segment = splitPaths[0][i];
-    if (segment === undefined) {
+    if (segment === undefined || !splitPaths.every((p) => p[i] === segment))
       break;
-    }
-
-    if (splitPaths.every((path) => path[i] === segment)) {
-      commonParts.push(segment);
-    } else {
-      break;
-    }
+    result.push(segment);
   }
 
-  return commonParts.length > 0 ? `${commonParts.join('/')}/` : '';
+  return result.length ? `${result.join('/')}/` : '';
 }
 
 /**
@@ -406,20 +402,13 @@ function getCommonDirectoryPath(pathes) {
  *
  */
 function getMatrixProduct(m1, m2) {
-  const rowsA = m1.length;
-  const colsA = m1[0].length;
-  const rowsB = m2.length;
-  const colsB = m2[0].length;
+  const rows = m1.length;
+  const cols = m2[0].length;
+  const result = Array.from({ length: rows }, () => Array(cols).fill(0));
 
-  if (colsA !== rowsB) {
-    throw new Error('Matrix dimensions do not match for multiplication');
-  }
-
-  const result = Array.from({ length: rowsA }, () => Array(colsB).fill(0));
-
-  for (let i = 0; i < rowsA; i += 1) {
-    for (let j = 0; j < colsB; j += 1) {
-      for (let k = 0; k < colsA; k += 1) {
+  for (let i = 0; i < rows; i++) {
+    for (let j = 0; j < cols; j++) {
+      for (let k = 0; k < m2.length; k++) {
         result[i][j] += m1[i][k] * m2[k][j];
       }
     }
@@ -460,21 +449,25 @@ function getMatrixProduct(m1, m2) {
  */
 function evaluateTicTacToePosition(position) {
   const lines = [
+    // rows
     [position[0][0], position[0][1], position[0][2]],
     [position[1][0], position[1][1], position[1][2]],
     [position[2][0], position[2][1], position[2][2]],
+    // columns
     [position[0][0], position[1][0], position[2][0]],
     [position[0][1], position[1][1], position[2][1]],
     [position[0][2], position[1][2], position[2][2]],
+    // diagonals
     [position[0][0], position[1][1], position[2][2]],
     [position[0][2], position[1][1], position[2][0]],
   ];
 
-  const winner = ['X', '0'].find((player) =>
-    lines.some((line) => line.every((cell) => cell === player))
-  );
+  for (const line of lines) {
+    if (line.every((cell) => cell === 'X')) return 'X';
+    if (line.every((cell) => cell === '0')) return '0';
+  }
 
-  return winner;
+  return undefined;
 }
 
 module.exports = {
